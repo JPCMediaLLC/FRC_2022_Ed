@@ -12,6 +12,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
@@ -23,6 +24,9 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -55,6 +59,11 @@ public class Robot extends TimedRobot {
   private DigitalInput Backsensor; 
   private int elvstate;
   private Solenoid pickPCM;
+
+  private ShuffleboardTab tab = Shuffleboard.getTab("Motor Speed");
+  private NetworkTableEntry shooterSpeed = tab.add("Shooter Speed", -.8) 
+  .withWidget(BuiltInWidgets.kNumberSlider)
+  .getEntry();
 
   private double signedPow (double x, double y) {
     double a = Math.pow(x, y);
@@ -122,7 +131,13 @@ public class Robot extends TimedRobot {
    * SmartDashboard integrated updating.
    */
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+   
+      SmartDashboard.putNumber("Elevator State  ", elvstate);
+      SmartDashboard.putData("Pickup Arm Extended  ", pickPCM);
+      SmartDashboard.putData("Climber State  ", climbDoublePCM);
+    }
+  
 
   /**
    * This autonomous (along with the chooser code above) shows how to select between different
@@ -382,8 +397,9 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-    elvstate=1;
+ 
 
+ 
   }
 
   /** This function is called periodically during operator control. */
@@ -391,8 +407,7 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
      m_robotDrive.driveCartesian( signedPow (m_stick.getX(), 2) , signedPow(m_stick.getY(), 2), signedPow(m_stick.getZ(), 2)*.5);
 
-    
-      
+       
     if (c_stick.getYButton())
      {pickPCM.set(true);
     
@@ -449,7 +464,8 @@ public class Robot extends TimedRobot {
 
     if (c_stick.getAButtonPressed())
      {
-       motor1.set(Preferences.getDouble("Motor1ForwardSpeed", -.8));
+       double fSpeed = shooterSpeed.getDouble  (-.8);
+       motor1.set(Preferences.getDouble("Motor1ForwardSpeed", fSpeed));
     
      }
      else 
