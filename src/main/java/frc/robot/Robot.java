@@ -11,7 +11,7 @@ import static edu.wpi.first.wpilibj.DoubleSolenoid.Value.*;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
-import edu.wpi.first.math.filter.SlewRateLimiter;
+
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Joystick;
@@ -40,9 +40,7 @@ public class Robot extends TimedRobot {
   private MecanumDrive m_robotDrive;
   private Joystick m_stick;
   private XboxController c_stick;
-  private SlewRateLimiter filterx;
-  private SlewRateLimiter filtery;
-  private SlewRateLimiter filterz;
+ 
   private int autoState;
   private int kmotor1Channel = 4;
   private int kmotor2Channel = 5;
@@ -77,10 +75,7 @@ public class Robot extends TimedRobot {
     auto_timer = new Timer();
     
     
-    // Creates a SlewRateLimiter that limits the rate of change of the signal to 0.5 units per second
-    filterx = new SlewRateLimiter(Preferences.getDouble("XRateLimit", 0.5));
-    filtery = new SlewRateLimiter(Preferences.getDouble("yRateLimit", 1.5));
-    filterz = new SlewRateLimiter(Preferences.getDouble("ZRateLimit", 1));
+  
 
     Frontsensor  = new DigitalInput(0);                        
     Backsensor = new DigitalInput(1);
