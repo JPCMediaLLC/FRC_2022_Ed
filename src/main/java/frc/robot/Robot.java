@@ -11,7 +11,7 @@ import static edu.wpi.first.wpilibj.DoubleSolenoid.Value.*;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
-
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
@@ -44,7 +44,9 @@ public class Robot extends TimedRobot {
   private MecanumDrive m_robotDrive;
   private Joystick m_stick;
   private XboxController c_stick;
- 
+  private SlewRateLimiter filterx;
+  private SlewRateLimiter filtery;
+  private SlewRateLimiter filterz;
   private int autoState;
   private int kmotor1Channel = 4;
   private int kmotor2Channel = 5;
@@ -65,12 +67,18 @@ public class Robot extends TimedRobot {
   .withWidget(BuiltInWidgets.kNumberSlider)
   .getEntry();
 
+  private NetworkTableEntry pickUpSpeedf = tab.add("PickUp Speed Forward", .8) 
+  .withWidget(BuiltInWidgets.kNumberSlider)
+  .getEntry();
+
+  private NetworkTableEntry pickUpSpeedr = tab.add("PickUp Speed Reverse", .8) 
+  .withWidget(BuiltInWidgets.kNumberSlider)
+  .getEntry();
+
   private double signedPow (double x, double y) {
     double a = Math.pow(x, y);
 
-      if (x<0) {
-           a=0-a;
-      }
+   
       return a;
   }
 
@@ -82,7 +90,9 @@ public class Robot extends TimedRobot {
   public void robotInit() { 
 
     auto_timer = new Timer();
-    
+    filterx = new SlewRateLimiter(Preferences.getDouble("XRateLimit", 1.5));
+    filtery = new SlewRateLimiter(Preferences.getDouble("yRateLimit", .8));
+    filterz = new SlewRateLimiter(Preferences.getDouble("ZRateLimit", 1.5));
     
   
 
@@ -405,9 +415,12 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-     m_robotDrive.driveCartesian( signedPow (m_stick.getX(), 2) , signedPow(m_stick.getY(), 2), signedPow(m_stick.getZ(), 2)*.5);
+     m_robotDrive.driveCartesian
+     (filtery.calculate (0 - signedPow (m_stick.getY(), 3)) ,
+      filterx.calculate( signedPow(m_stick.getX(), 3)), 
+      filterz.calculate( signedPow((m_stick.getZ()*0.8), 3)));
 
-       
+     
     if (c_stick.getYButton())
      {pickPCM.set(true);
     
@@ -419,11 +432,13 @@ public class Robot extends TimedRobot {
 
      if (c_stick.getRightBumper() && pickPCM.get() == true)
      {
-       motor3.set (Preferences.getDouble("Motor3ForwardSpeed", 0.5));
+      double pSpeedf = pickUpSpeedf.getDouble  (.8); 
+      motor3.set (Preferences.getDouble("Motor3ForwardSpeed", pSpeedf));
      }
      else if (c_stick.getLeftBumper() && pickPCM.get() == true)
      {
-       motor3.set (Preferences.getDouble("Motor3BackwardSpeed", -0.5));
+      double pSpeedr = pickUpSpeedr.getDouble  (-.8); 
+      motor3.set (Preferences.getDouble("Motor3BackwardSpeed", pSpeedr));
      }
      else 
      {
@@ -459,10 +474,13 @@ public class Robot extends TimedRobot {
        else if (Frontsensor.get()==true && Backsensor.get() == true) {
           elvstate=4;
         }
+        else {
+          elvstate = 1;
+        }
 
 
 
-    if (c_stick.getAButtonPressed())
+    if (c_stick.getAButton())
      {
        double fSpeed = shooterSpeed.getDouble  (-.8);
        motor1.set(Preferences.getDouble("Motor1ForwardSpeed", fSpeed));
@@ -474,7 +492,7 @@ public class Robot extends TimedRobot {
 
        
      }
-     if (c_stick.getAButtonPressed() || elvstate == 2)
+     if (c_stick.getAButton() || elvstate == 2)
      {
      
        motor2.set(Preferences.getDouble("Motor2ForwardSpeed", -.5));

@@ -6,6 +6,11 @@
       }
     },
     "Other Devices": {
+      "Talon FX[3]": {
+        "header": {
+          "open": true
+        }
+      },
       "Talon SRX[4]": {
         "header": {
           "open": true
